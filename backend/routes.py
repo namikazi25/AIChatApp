@@ -1,26 +1,36 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Dict, Any
+from pydantic import BaseModel
 from backend.session import get_memory, add_to_memory
 from models.router import get_llm_response, set_user_model
 from utils.file_parser import parse_file
 
+# Pydantic models for request validation
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+
+class ModelRequest(BaseModel):
+    user_id: str
+    model: str
+
 router = APIRouter()
 
 @router.post("/chat")
-async def chat(user_id: str, message: str) -> Dict[str, Any]:
+async def chat(request: ChatRequest) -> Dict[str, Any]:
     """Process a chat message and get a response from the LLM"""
     try:
         # Get user's chat history
-        memory = get_memory(user_id)
+        memory = get_memory(request.user_id)
         
         # Add user message to memory
-        add_to_memory(user_id, {"role": "user", "content": message})
+        add_to_memory(request.user_id, {"role": "user", "content": request.message})
         
         # Get response from the appropriate LLM
-        response = await get_llm_response(user_id, message, memory)
+        response = await get_llm_response(request.user_id, request.message, memory)
         
         # Add assistant response to memory
-        add_to_memory(user_id, {"role": "assistant", "content": response})
+        add_to_memory(request.user_id, {"role": "assistant", "content": response})
         
         return {"response": response}
     except Exception as e:
@@ -42,21 +52,21 @@ async def upload(user_id: str = Form(...), file: UploadFile = File(...)) -> Dict
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
 @router.post("/set_model")
-async def set_model_route(user_id: str, model: str) -> Dict[str, Any]:
+async def set_model_route(request: ModelRequest) -> Dict[str, Any]:
     """Set the LLM model for a specific user"""
     try:
         # Validate model choice
         valid_models = ["gpt-4o", "gemini-1.5-flash", "deepseek-v3"]
-        if model not in valid_models:
+        if request.model not in valid_models:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Invalid model. Choose from: {', '.join(valid_models)}"
             )
         
         # Set the user's model preference
-        set_user_model(user_id, model)
+        set_user_model(request.user_id, request.model)
         
-        return {"response": f"Model set to {model}"}
+        return {"response": f"Model set to {request.model}"}
     except HTTPException as he:
         raise he
     except Exception as e:
