@@ -2,7 +2,7 @@ import os
 from typing import Dict, List, Any
 import openai
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 
 # Load environment variables
@@ -18,7 +18,9 @@ async def call_gpt(message: str, memory: List[Dict[str, str]]) -> str:
         chat = ChatOpenAI(
             model_name="gpt-4o-mini",
             temperature=0.7,
-            streaming=False
+            streaming=False,
+            # Explicitly set proxies to None to avoid the error
+            openai_proxy=None
         )
         
         # Convert memory format to LangChain message format

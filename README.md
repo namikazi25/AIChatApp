@@ -1,10 +1,10 @@
 # Multimodal LLM Discord Bot
 
-A powerful Discord bot that supports conversations with multiple AI models (GPT-4o, Gemini 1.5 Flash, DeepSeek V3), accepts image and document inputs, and maintains per-user chat history.
+A powerful Discord bot that supports conversations with multiple AI models (GPT-4o, Gemini 2.0 Flash, Gemini 2.5 Pro Experimental, DeepSeek V3), accepts image and document inputs, and maintains per-user chat history.
 
 ## Features
 
-- **Multiple AI Models**: Switch between GPT-4o-mini, Gemini 2.0 Flash, and DeepSeek V3
+- **Multiple AI Models**: Switch between GPT-4o, Gemini 2.0 Flash, Gemini 2.5 Pro Experimental, and DeepSeek V3
 - **Multimodal Input**: Upload and process images, PDFs, and Word documents
 - **Per-User Memory**: Maintains conversation history for each user
 - **Slash Commands**: Easy-to-use Discord slash commands
@@ -71,7 +71,7 @@ Once the bot is running and added to your Discord server, you can use the follow
 
 - `/chat [message]` - Send a message to the AI assistant
 - `/upload [file]` - Upload an image or document for context
-- `/set_model [model]` - Change the AI model (options: gpt-4o, gemini-1.5-flash, deepseek-v3)
+- `/set_model [model]` - Change the AI model (options: gpt-4o, gemini-2.0-flash, gemini-2.5-pro-experimental, deepseek-v3)
 
 ## Project Structure
 
@@ -91,7 +91,7 @@ discord-llm-bot/
 ├── models/
 │   ├── router.py           # Picks the right LLM using LangChain
 │   ├── gpt.py              # GPT-4o wrapper
-│   ├── gemini.py           # Gemini 1.5 wrapper
+│   ├── gemini.py           # Gemini models wrapper
 │   └── deepseek.py         # DeepSeek wrapper
 │
 ├── utils/

@@ -40,18 +40,25 @@ async def setup_commands(bot):
         response = await call_api("/chat", {"user_id": str(interaction.user.id), "message": message})
         await interaction.followup.send(response["response"])
 
-    @bot.tree.command(name="upload", description="Upload an image or document for context")
-    async def upload(interaction: discord.Interaction, file: discord.Attachment):
+    @bot.tree.command(name="upload", description="Upload an image or document and optionally ask a question about it")
+    async def upload(interaction: discord.Interaction, file: discord.Attachment, question: str = None):
         await interaction.response.defer()
         content = await file.read()
         files = {"file": (file.filename, content)}
-        res = await call_api("/upload", {"user_id": str(interaction.user.id)}, files)
+        
+        # Include the question in the API call if provided
+        json_data = {"user_id": str(interaction.user.id)}
+        if question:
+            json_data["question"] = question
+            
+        res = await call_api("/upload", json_data, files)
         await interaction.followup.send(res["response"])
 
     @bot.tree.command(name="set_model", description="Change the AI model")
     @app_commands.choices(model=[
         app_commands.Choice(name="GPT-4o", value="gpt-4o"),
-        app_commands.Choice(name="Gemini 1.5 Flash", value="gemini-1.5-flash"),
+        app_commands.Choice(name="Gemini 2.0 Flash", value="gemini-2.0-flash"),
+        app_commands.Choice(name="Gemini 2.5 Pro Experimental", value="gemini-2.5-pro-experimental"),
         app_commands.Choice(name="DeepSeek V3", value="deepseek-v3")
     ])
     async def set_model(interaction: discord.Interaction, model: str):

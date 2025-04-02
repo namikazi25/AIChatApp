@@ -37,8 +37,8 @@ async def chat(request: ChatRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @router.post("/upload")
-async def upload(user_id: str = Form(...), file: UploadFile = File(...)) -> Dict[str, Any]:
-    """Process an uploaded file and add its content to the user's context"""
+async def upload(user_id: str = Form(...), file: UploadFile = File(...), question: str = Form(None)) -> Dict[str, Any]:
+    """Process an uploaded file and optionally answer a question about it"""
     try:
         # Parse the uploaded file
         parsed_content = await parse_file(file)
@@ -46,6 +46,22 @@ async def upload(user_id: str = Form(...), file: UploadFile = File(...)) -> Dict
         # Add file content to user's memory as system message
         system_message = f"Content from uploaded file '{file.filename}':\n{parsed_content}"
         add_to_memory(user_id, {"role": "system", "content": system_message})
+        
+        # If a question was provided, process it immediately
+        if question:
+            # Add user question to memory
+            add_to_memory(user_id, {"role": "user", "content": question})
+            
+            # Get memory for context
+            memory = get_memory(user_id)
+            
+            # Get response from the LLM
+            response = await get_llm_response(user_id, question, memory)
+            
+            # Add assistant response to memory
+            add_to_memory(user_id, {"role": "assistant", "content": response})
+            
+            return {"response": response}
         
         return {"response": f"File '{file.filename}' uploaded and processed successfully."}
     except Exception as e:
@@ -56,7 +72,7 @@ async def set_model_route(request: ModelRequest) -> Dict[str, Any]:
     """Set the LLM model for a specific user"""
     try:
         # Validate model choice
-        valid_models = ["gpt-4o", "gemini-1.5-flash", "deepseek-v3"]
+        valid_models = ["gpt-4o", "gemini-2.0-flash", "gemini-2.5-pro-experimental", "deepseek-v3"]
         if request.model not in valid_models:
             raise HTTPException(
                 status_code=400, 
