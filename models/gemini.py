@@ -11,11 +11,11 @@ load_dotenv()
 # Set Google API key
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-async def call_gemini(message: str, memory: List[Dict[str, str]]) -> str:
+async def call_gemini(message: str, memory: List[Dict[str, str]], model: str = "gemini-2.0-flash") -> str:
     """Call the Google Gemini model"""
     try:
         # Initialize Gemini model
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel(model)
         
         # Convert memory format to Gemini chat format
         chat_history = []

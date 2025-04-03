@@ -17,7 +17,9 @@ user_models: Dict[str, str] = {}
 
 def set_user_model(user_id: str, model: str) -> None:
     """Set the LLM model for a specific user"""
+    from backend.session import set_user_model as session_set_user_model
     user_models[user_id] = model
+    session_set_user_model(user_id, model)  # Sync with session storage
 
 def get_model_for_user(user_id: str) -> str:
     """Get the model preference for a specific user"""
@@ -33,21 +35,31 @@ def get_model_for_user(user_id: str) -> str:
     # Return default model
     return DEFAULT_MODEL
 
+# models/router.py - Add validation
+VALID_MODELS = {
+    "gpt-4o": call_gpt,
+    "gemini-2.0-flash": lambda m, mem: call_gemini(m, mem, "gemini-2.0-flash"),
+    "gemini-2.5-pro-experimental": lambda m, mem: call_gemini(m, mem, "gemini-2.5-pro-experimental"),
+    "deepseek-v3": call_deepseek
+}
+
+
 async def get_llm_response(user_id: str, message: str, memory: List[Dict[str, str]]) -> str:
     """Route the request to the appropriate LLM based on user preference"""
     model = get_model_for_user(user_id)
     
     try:
-        if model.startswith("gpt"):
+        if model == "gpt-4o":
             return await call_gpt(message, memory)
-        elif model.startswith("gemini"):
-            return await call_gemini(message, memory)
-        elif model.startswith("deepseek"):
+        elif model == "gemini-2.0-flash":
+            return await call_gemini(message, memory, model="gemini-2.0-flash")
+        elif model == "gemini-2.5-pro-experimental":
+            return await call_gemini(message, memory, model="gemini-2.5-pro-experimental")
+        elif model == "deepseek-v3":
             return await call_deepseek(message, memory)
         else:
             # Fallback to default model
             return await call_gpt(message, memory)
     except Exception as e:
-        # Log the error and fallback to a simple response
         print(f"Error calling LLM: {str(e)}")
         return f"I'm sorry, I encountered an error while processing your request. Please try again later."

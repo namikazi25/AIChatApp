@@ -16,7 +16,7 @@ async def call_gpt(message: str, memory: List[Dict[str, str]]) -> str:
     try:
         # Initialize the ChatOpenAI model
         chat = ChatOpenAI(
-            model_name="gpt-4o-mini",
+            model_name="gpt-4o",
             temperature=0.7,
             streaming=False,
             # Explicitly set proxies to None to avoid the error
