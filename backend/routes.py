@@ -44,7 +44,15 @@ async def upload(user_id: str = Form(...), file: UploadFile = File(...), questio
         parsed_content = await parse_file(file)
         
         # Add file content to user's memory as system message
-        system_message = f"Content from uploaded file '{file.filename}':\n{parsed_content}"
+        if parsed_content["type"] == "image":
+            # For images, store the full image data including base64
+            system_message = parsed_content
+            response_message = f"Image '{file.filename}' uploaded and processed successfully. The AI can now see and analyze this image."
+        else:
+            # For text-based files (PDF, DOCX)
+            system_message = f"Content from uploaded file '{file.filename}':\n{parsed_content['content']}"
+            response_message = f"File '{file.filename}' uploaded and processed successfully."
+        
         add_to_memory(user_id, {"role": "system", "content": system_message})
         
         # If a question was provided, process it immediately
@@ -63,7 +71,7 @@ async def upload(user_id: str = Form(...), file: UploadFile = File(...), questio
             
             return {"response": response}
         
-        return {"response": f"File '{file.filename}' uploaded and processed successfully."}
+        return {"response": response_message}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
