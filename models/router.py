@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from dotenv import load_dotenv
 from backend.session import get_user_model
 from models.gpt import call_gpt
@@ -15,20 +15,24 @@ DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o")
 # User model preferences
 user_models: Dict[str, str] = {}
 
-def set_user_model(user_id: str, model: str) -> None:
+def set_user_model(user_id: str, model: str, context_id: Optional[str] = None) -> None:
     """Set the LLM model for a specific user"""
     from backend.session import set_user_model as session_set_user_model
-    user_models[user_id] = model
-    session_set_user_model(user_id, model)  # Sync with session storage
+    session_key = f"{user_id}:{context_id}" if context_id else user_id
+    user_models[session_key] = model
+    session_set_user_model(user_id, model, context_id)  # Sync with session storage
 
-def get_model_for_user(user_id: str) -> str:
+def get_model_for_user(user_id: str, context_id: Optional[str] = None) -> str:
     """Get the model preference for a specific user"""
+    # Generate session key
+    session_key = f"{user_id}:{context_id}" if context_id else user_id
+    
     # Check if user has a model preference
-    if user_id in user_models:
-        return user_models[user_id]
+    if session_key in user_models:
+        return user_models[session_key]
     
     # Check if user has a model preference in session
-    session_model = get_user_model(user_id)
+    session_model = get_user_model(user_id, context_id)
     if session_model:
         return session_model
     
@@ -44,9 +48,9 @@ VALID_MODELS = {
 }
 
 
-async def get_llm_response(user_id: str, message: str, memory: List[Dict[str, str]]) -> str:
+async def get_llm_response(user_id: str, message: str, memory: List[Dict[str, str]], context_id: Optional[str] = None) -> str:
     """Route the request to the appropriate LLM based on user preference"""
-    model = get_model_for_user(user_id)
+    model = get_model_for_user(user_id, context_id)
     
     try:
         if model == "gpt-4o":
