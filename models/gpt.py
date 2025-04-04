@@ -3,7 +3,7 @@ from typing import Dict, List, Any
 import openai
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 # Load environment variables
 load_dotenv()

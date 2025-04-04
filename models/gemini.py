@@ -2,8 +2,8 @@ import os
 from typing import Dict, List, Any
 import google.generativeai as genai
 from dotenv import load_dotenv
-from langchain.llms import GooglePalm
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain_community.llms import GooglePalm
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 # Load environment variables
 load_dotenv()
