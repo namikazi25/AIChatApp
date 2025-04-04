@@ -20,6 +20,10 @@ bot = commands.Bot(command_prefix='!', description="Multimodal LLM Discord Bot",
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     await setup_commands(bot)
+    await bot.change_presence(
+        status=discord.Status.online,
+        activity=discord.Game("Chatting")
+    )
 
 async def on_message(message):
     await EventHandler.on_message(message, bot)
