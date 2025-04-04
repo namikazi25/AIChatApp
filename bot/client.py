@@ -25,8 +25,11 @@ async def on_ready():
         activity=discord.Game("Chatting")
     )
 
+@bot.event
 async def on_message(message):
     await EventHandler.on_message(message, bot)
+    # Process commands after handling the message
+    await bot.process_commands(message)
 
 async def main():
     async with bot:
