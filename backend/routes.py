@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from backend.session import get_memory, add_to_memory
 from models.router import get_llm_response, set_user_model
@@ -9,10 +9,12 @@ from utils.file_parser import parse_file
 class ChatRequest(BaseModel):
     user_id: str
     message: str
+    context_id: Optional[str] = None
 
 class ModelRequest(BaseModel):
     user_id: str
     model: str
+    context_id: Optional[str] = None
 
 router = APIRouter()
 
@@ -20,24 +22,24 @@ router = APIRouter()
 async def chat(request: ChatRequest) -> Dict[str, Any]:
     """Process a chat message and get a response from the LLM"""
     try:
-        # Get user's chat history
-        memory = get_memory(request.user_id)
+        # Get user's chat history with context if provided
+        memory = get_memory(request.user_id, request.context_id)
         
         # Add user message to memory
-        add_to_memory(request.user_id, {"role": "user", "content": request.message})
+        add_to_memory(request.user_id, {"role": "user", "content": request.message}, request.context_id)
         
         # Get response from the appropriate LLM
-        response = await get_llm_response(request.user_id, request.message, memory)
+        response = await get_llm_response(request.user_id, request.message, memory, request.context_id)
         
         # Add assistant response to memory
-        add_to_memory(request.user_id, {"role": "assistant", "content": response})
+        add_to_memory(request.user_id, {"role": "assistant", "content": response}, request.context_id)
         
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 @router.post("/upload")
-async def upload(user_id: str = Form(...), file: UploadFile = File(...), question: str = Form(None)) -> Dict[str, Any]:
+async def upload(user_id: str = Form(...), file: UploadFile = File(...), question: str = Form(None), context_id: Optional[str] = Form(None)) -> Dict[str, Any]:
     """Process an uploaded file and optionally answer a question about it"""
     try:
         # Parse the uploaded file
@@ -53,21 +55,21 @@ async def upload(user_id: str = Form(...), file: UploadFile = File(...), questio
             system_message = f"Content from uploaded file '{file.filename}':\n{parsed_content['content']}"
             response_message = f"File '{file.filename}' uploaded and processed successfully."
         
-        add_to_memory(user_id, {"role": "system", "content": system_message})
+        add_to_memory(user_id, {"role": "system", "content": system_message}, context_id)
         
         # If a question was provided, process it immediately
         if question:
             # Add user question to memory
-            add_to_memory(user_id, {"role": "user", "content": question})
+            add_to_memory(user_id, {"role": "user", "content": question}, context_id)
             
             # Get memory for context
-            memory = get_memory(user_id)
+            memory = get_memory(user_id, context_id)
             
             # Get response from the LLM
-            response = await get_llm_response(user_id, question, memory)
+            response = await get_llm_response(user_id, question, memory, context_id)
             
             # Add assistant response to memory
-            add_to_memory(user_id, {"role": "assistant", "content": response})
+            add_to_memory(user_id, {"role": "assistant", "content": response}, context_id)
             
             return {"response": response}
         
@@ -88,7 +90,7 @@ async def set_model_route(request: ModelRequest) -> Dict[str, Any]:
             )
         
         # Set the user's model preference
-        set_user_model(request.user_id, request.model)
+        set_user_model(request.user_id, request.model, request.context_id)
         
         return {"response": f"Model set to {request.model}"}
     except HTTPException as he:

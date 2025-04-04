@@ -3,9 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from backend.routes import router
+from backend.config import get_storage_backend
+from backend.session import set_storage_backend
 
 # Load environment variables
 load_dotenv()
+
+# Initialize session manager with configured storage backend
+set_storage_backend(get_storage_backend())
 
 # Create FastAPI app
 app = FastAPI(title="Discord LLM Bot Backend")

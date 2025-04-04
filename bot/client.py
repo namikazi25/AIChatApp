@@ -22,7 +22,7 @@ async def on_ready():
     await setup_commands(bot)
     await bot.change_presence(
         status=discord.Status.online,
-        activity=discord.Game("Chatting")
+        activity=discord.Game("!help")
     )
 
 @bot.event

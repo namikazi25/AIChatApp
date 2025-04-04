@@ -37,8 +37,32 @@ async def setup_commands(bot):
     @bot.tree.command(name="chat", description="Chat with the AI assistant")
     async def chat(interaction: discord.Interaction, message: str):
         await interaction.response.defer()
-        response = await call_api("/chat", {"user_id": str(interaction.user.id), "message": message})
-        await interaction.followup.send(response["response"])
+        
+        # Check if the command is used in a server (not DM)
+        if isinstance(interaction.channel, discord.TextChannel):
+            # Create a thread-specific user ID to maintain separate memory context
+            thread_name = f"Chat with {interaction.user.display_name}"
+            
+            # Create a new thread for this conversation
+            thread = await interaction.channel.create_thread(
+                name=thread_name,
+                type=discord.ChannelType.public_thread,
+                auto_archive_duration=1440  # Auto-archive after 24 hours of inactivity
+            )
+            
+            # Use thread-specific user ID for the API call
+            thread_user_id = f"{interaction.user.id}:{thread.id}"
+            response = await call_api("/chat", {"user_id": thread_user_id, "message": message})
+            
+            # Send the response in the thread
+            await thread.send(response["response"])
+            
+            # Notify in the original channel that a thread was created
+            await interaction.followup.send(f"I've created a thread for our conversation! Check {thread.mention}")
+        else:
+            # Regular behavior for DMs
+            response = await call_api("/chat", {"user_id": str(interaction.user.id), "message": message})
+            await interaction.followup.send(response["response"])
 
     @bot.tree.command(name="upload", description="Upload an image or document and optionally ask a question about it")
     async def upload(interaction: discord.Interaction, file: discord.Attachment, question: str = None):
@@ -46,13 +70,39 @@ async def setup_commands(bot):
         content = await file.read()
         files = {"file": (file.filename, content)}
         
-        # Include the question in the API call if provided
-        json_data = {"user_id": str(interaction.user.id)}
-        if question:
-            json_data["question"] = question
+        # Check if the command is used in a server (not DM)
+        if isinstance(interaction.channel, discord.TextChannel):
+            # Create a thread-specific user ID to maintain separate memory context
+            thread_name = f"Upload from {interaction.user.display_name}"
             
-        res = await call_api("/upload", json_data, files)
-        await interaction.followup.send(res["response"])
+            # Create a new thread for this conversation
+            thread = await interaction.channel.create_thread(
+                name=thread_name,
+                type=discord.ChannelType.public_thread,
+                auto_archive_duration=1440  # Auto-archive after 24 hours of inactivity
+            )
+            
+            # Use thread-specific user ID for the API call
+            thread_user_id = f"{interaction.user.id}:{thread.id}"
+            json_data = {"user_id": thread_user_id}
+            if question:
+                json_data["question"] = question
+                
+            res = await call_api("/upload", json_data, files)
+            
+            # Send the response in the thread
+            await thread.send(res["response"])
+            
+            # Notify in the original channel that a thread was created
+            await interaction.followup.send(f"I've created a thread for our conversation! Check {thread.mention}")
+        else:
+            # Regular behavior for DMs
+            json_data = {"user_id": str(interaction.user.id)}
+            if question:
+                json_data["question"] = question
+                
+            res = await call_api("/upload", json_data, files)
+            await interaction.followup.send(res["response"])
 
     @bot.tree.command(name="set_model", description="Change the AI model")
     @app_commands.choices(model=[
