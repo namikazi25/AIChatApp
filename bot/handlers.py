@@ -15,4 +15,12 @@ class EventHandler:
         # Add additional message handling logic here
         # For example, you could implement a prefix-based command system
         # or handle direct messages differently
-        pass
+        if isinstance(message.channel, DMChannel):
+            payload = {
+                "user_id": str(message.author.id),
+                "message": message.content
+            }
+            response = await call_api("/chat", payload)
+            reply = response.get("response", "No response from API.")
+            await message.channel.send(reply)
+        
