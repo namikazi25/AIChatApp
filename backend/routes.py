@@ -82,7 +82,7 @@ async def set_model_route(request: ModelRequest) -> Dict[str, Any]:
     """Set the LLM model for a specific user"""
     try:
         # Validate model choice
-        valid_models = ["gpt-4o", "gemini-2.0-flash", "gemini-2.5-pro-experimental", "deepseek-v3"]
+        valid_models = ["gemini-2.0-flash", "gemini-2.5-pro-experimental", "deepseek-v3"]
         if request.model not in valid_models:
             raise HTTPException(
                 status_code=400, 

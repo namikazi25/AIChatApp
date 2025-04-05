@@ -10,7 +10,7 @@ from models.deepseek import call_deepseek
 load_dotenv()
 
 # Default model if not specified
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gemini-2.0-flash")
 
 # User model preferences
 user_models: Dict[str, str] = {}
